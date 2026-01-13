@@ -1,0 +1,82 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>CPU Stress Test (Browser)</title>
+        <style>
+        body {
+            font-family: system-ui, sans-serif;
+            background: #111;
+            color: #eee;
+            padding: 20px;
+        }
+        button {
+            font-size: 16px;
+            padding: 10px 16px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #0f0;
+        }
+        </style>
+        <script>
+        let workers = [];
+
+        function start() {
+            //stop just in case stuff is still running
+            stop();
+
+            let cores;
+            if (navigator.hardwareConcurrency) {
+                cores = navigator.hardwareConcurrency;
+            } else {
+                cores = 8;
+            }
+
+            document.getElementById("status").textContent = `Running on ${cores} cores…`;
+
+            //continuously create workers, using up all cores
+            const workerCode = `
+                onmessage = () => {
+                function burn() {
+                    let x = 0;
+                    for (let i = 0; i < 1e7; i++) {
+                    x += Math.sqrt(Math.random()) * Math.sin(Math.random());
+                    }
+                    setTimeout(burn, 0);
+                }
+                burn();
+                };
+            `;
+
+            //creates fake "js file" in memory using the js above
+            const blob = new Blob([workerCode], { type: "application/javascript" });
+            const url = URL.createObjectURL(blob);
+
+            for (let i = 0; i < cores; i++) {
+                const w = new Worker(url);
+                w.postMessage("start");
+                workers.push(w);
+            }
+        }
+
+        //stop all the workers
+        function stop() {
+            workers.forEach(w => w.terminate());
+            workers = [];
+            document.getElementById("status").textContent = "Stopped";
+        }
+        </script>        
+    </head>
+    <body>
+        <h1>🔥 Browser CPU Stress Test</h1>
+        <p>This page will max out your CPU using JavaScript Web Workers.</p>
+
+        <button onclick="start()">Start CPU Load</button>
+        <button onclick="stop()">Stop</button>
+
+        <div id="status">Idle</div>
+    </body>
+</html>
