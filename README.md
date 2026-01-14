@@ -7,8 +7,8 @@ They are **not** meant for casual use.
 This repository contains a collection of scripts designed to stress test a computer’s hardware, including:
 
 - **CPU** (high computation, multi-threaded workloads)
+- **Memory (RAM)** (large allocation of memory up to 128GB or until browser cap)
 <!--
-- **Memory (RAM)** (large allocations, read/write pressure)
 - **GPU** (graphics/compute workloads)
 -->
 
