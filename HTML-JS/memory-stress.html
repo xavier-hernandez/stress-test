@@ -1,0 +1,96 @@
+<html>
+	<head>
+		<title>Memory Stress Test</title>
+		<style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #111;
+        color: #eee;
+        padding: 20px;
+      }
+      button {
+        font-size: 16px;
+        padding: 10px 16px;
+        margin-right: 10px;
+        cursor: pointer;
+      }
+      #status {
+        margin-top: 20px;
+        font-size: 14px;
+        color: #0f0;
+      }
+		</style>
+	</head>
+	<body>
+    <h1>🧠 Browser Memory Stress Test</h1>
+    <p>Allocates RAM in large blocks until you stop it.</p>
+
+    <button onclick="start()">Start / Consume Memory</button>
+    <button onclick="stop()">Stop / Free Memory</button>
+
+    <div id="status">Idle</div>
+    <div id="usage">Allocated: 0 MB</div>
+
+    <script>
+      let blocks = [];
+      let allocatedMB = 0;
+      let running = false;
+
+      // Size per allocation block (in MB)
+      const BLOCK_SIZE_MB = 128;          // 128 MB per chunk
+      const MAX_MEMORY_MB = 128 * 1024;   // 128 GB limit
+
+      function start() {
+        running = true;
+        allocate();
+      }
+
+      function allocate() {
+        if (!running) return;
+
+        if (allocatedMB >= MAX_MEMORY_MB) {
+          document.getElementById("status").textContent =
+            "Reached 128GB limit. Allocation stopped.";
+          return;
+        }
+
+        try {
+          const size = BLOCK_SIZE_MB * 1024 * 1024;
+          const buffer = new ArrayBuffer(size);
+          const view = new Uint8Array(buffer);
+
+          // Force physical memory commit, if this is not done it uses only allocates virtual memory
+          for (let i = 0; i < view.length; i += 4096) {
+            view[i] = 1;
+          }
+
+          blocks.push(buffer);
+          allocatedMB += BLOCK_SIZE_MB;
+
+          document.getElementById("status").textContent = "Allocating...";
+          document.getElementById("usage").textContent =
+            `Allocated: ${(allocatedMB / 1024).toFixed(2)} GB`;
+
+          setTimeout(allocate, 100);
+        }
+        catch (e) {
+          document.getElementById("status").textContent =
+            "Allocation failed (out of memory or browser limit reached)";
+          console.error(e);
+        }
+      }
+
+      function stop() {
+        running = false;
+        blocks = [];
+        allocatedMB = 0;
+
+        document.getElementById("status").textContent = "Stopped, memory released";
+        document.getElementById("usage").textContent = "Allocated: 0 MB";
+
+        // Only works if Firefox was launched with --expose-gc
+        if (window.gc) window.gc();
+      }
+    </script>
+  </body>
+</html>
